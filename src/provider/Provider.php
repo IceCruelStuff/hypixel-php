@@ -13,6 +13,7 @@ use Plancke\HypixelPHP\responses\Leaderboards;
 use Plancke\HypixelPHP\responses\player\Player;
 use Plancke\HypixelPHP\responses\PlayerCount;
 use Plancke\HypixelPHP\responses\Session;
+use Plancke\HypixelPHP\responses\skyblock\SkyBlockProfile;
 use Plancke\HypixelPHP\responses\WatchdogStats;
 
 /**
@@ -108,6 +109,15 @@ class Provider extends Module {
     public function getGameCounts() {
         return function ($HypixelPHP, $data) {
             return new GameCounts($HypixelPHP, $data);
+        };
+    }
+
+    /**
+     * @return Closure
+     */
+    public function getSkyBlockProfile() {
+        return function ($HypixelPHP, $data) {
+            return new SkyBlockProfile($HypixelPHP, $data);
         };
     }
 

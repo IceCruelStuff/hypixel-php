@@ -15,14 +15,14 @@ class KeyInfo extends HypixelObject {
      * @return int
      */
     public function getQueriesInPastMin() {
-        return $this->getInt("queriesInPastMin");
+        return $this->getNumber("queriesInPastMin");
     }
 
     /**
      * @return int
      */
     public function getTotalQueries() {
-        return $this->getInt("totalQueries");
+        return $this->getNumber("totalQueries");
     }
 
     /**
@@ -35,8 +35,12 @@ class KeyInfo extends HypixelObject {
     /**
      * @return string
      */
-    function getCacheTimeKey() {
+    public function getCacheTimeKey() {
         return CacheTimes::KEY_INFO;
+    }
+
+    public function save() {
+        $this->getHypixelPHP()->getCacheHandler()->setKeyInfo($this);
     }
 
 }

@@ -22,6 +22,10 @@ class ResponseAdapter extends Module {
      * @throws HypixelPHPException
      */
     public function adaptResponse($fetch, $keyValues, Response $response) {
+        if (strpos($fetch, FetchTypes::RESOURCES) === 0) {
+            return $this->wrapRecord($response);
+        }
+
         switch ($fetch) {
             case FetchTypes::PLAYER:
                 return $this->remapField('player', $response);
@@ -35,6 +39,8 @@ class ResponseAdapter extends Module {
                 return $this->attachKeyValues($keyValues, $this->wrapRecord($response->setData(['list' => $response->getData()['records']])));
             case FetchTypes::SESSION:
                 return $this->attachKeyValues($keyValues, $this->remapField('session', $response));
+            case FetchTypes::SKYBLOCK_PROFILE:
+                return $this->remapField('profile', $response);
 
             case FetchTypes::WATCHDOG_STATS:
             case FetchTypes::PLAYER_COUNT:
@@ -48,6 +54,14 @@ class ResponseAdapter extends Module {
             default:
                 throw new HypixelPHPException("Invalid Adapter Key: " . $fetch, ExceptionCodes::INVALID_ADAPTER_KEY);
         }
+    }
+
+    /**
+     * @param Response $response
+     * @return Response
+     */
+    protected function wrapRecord(Response $response) {
+        return $response->setData(['record' => $response->getData()]);
     }
 
     /**
@@ -71,13 +85,5 @@ class ResponseAdapter extends Module {
             $data['record'] = array_merge($data['record'], $keyValues);
         }
         return $response->setData($data);
-    }
-
-    /**
-     * @param Response $response
-     * @return Response
-     */
-    protected function wrapRecord(Response $response) {
-        return $response->setData(['record' => $response->getData()]);
     }
 }

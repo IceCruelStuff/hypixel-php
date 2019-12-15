@@ -14,7 +14,9 @@ use Plancke\HypixelPHP\responses\KeyInfo;
 use Plancke\HypixelPHP\responses\Leaderboards;
 use Plancke\HypixelPHP\responses\player\Player;
 use Plancke\HypixelPHP\responses\PlayerCount;
+use Plancke\HypixelPHP\responses\Resource;
 use Plancke\HypixelPHP\responses\Session;
+use Plancke\HypixelPHP\responses\skyblock\SkyBlockProfile;
 use Plancke\HypixelPHP\responses\WatchdogStats;
 use Plancke\HypixelPHP\util\CacheUtil;
 
@@ -49,21 +51,14 @@ class FlatFileCacheHandler extends CacheHandler {
     }
 
     /**
-     * Save given array to file
-     *
-     * @param $filename
-     * @param $obj
-     * @throws InvalidArgumentException
+     * @param $uuid
+     * @return Player|null
      */
-    protected function _setCache($filename, $obj) {
-        $filename = $this->baseDirectory . DIRECTORY_SEPARATOR . $filename . '.json';
-        $content = json_encode($this->objToArray($obj));
-
-        if (!file_exists(dirname($filename))) {
-            // create directory
-            @mkdir(dirname($filename), 0744, true);
-        }
-        file_put_contents($filename, $content);
+    public function getPlayer($uuid) {
+        return $this->wrapProvider(
+            $this->getHypixelPHP()->getProvider()->getPlayer(),
+            $data = $this->_getCache(CacheTypes::PLAYERS . DIRECTORY_SEPARATOR . CacheUtil::getCacheFileName($uuid))
+        );
     }
 
     /**
@@ -81,22 +76,29 @@ class FlatFileCacheHandler extends CacheHandler {
     }
 
     /**
-     * @param $uuid
-     * @return Player|null
-     */
-    public function getPlayer($uuid) {
-        return $this->wrapProvider(
-            $this->getHypixelPHP()->getProvider()->getPlayer(),
-            $data = $this->_getCache(CacheTypes::PLAYERS . DIRECTORY_SEPARATOR . CacheUtil::getCacheFileName($uuid))
-        );
-    }
-
-    /**
      * @param Player $player
      * @throws InvalidArgumentException
      */
     public function setPlayer(Player $player) {
         $this->_setCache(CacheTypes::PLAYERS . DIRECTORY_SEPARATOR . CacheUtil::getCacheFileName($player->getUUID()), $player);
+    }
+
+    /**
+     * Save given array to file
+     *
+     * @param $filename
+     * @param $obj
+     * @throws InvalidArgumentException
+     */
+    protected function _setCache($filename, $obj) {
+        $filename = $this->baseDirectory . DIRECTORY_SEPARATOR . $filename . '.json';
+        $content = json_encode($this->objToArray($obj));
+
+        if (!file_exists(dirname($filename))) {
+            // create directory
+            @mkdir(dirname($filename), 0744, true);
+        }
+        file_put_contents($filename, $content);
     }
 
     /**
@@ -352,6 +354,48 @@ class FlatFileCacheHandler extends CacheHandler {
      */
     public function setGameCounts(GameCounts $gameCounts) {
         $this->_setCache(CacheTypes::GAME_COUNTS, $gameCounts);
+    }
+
+    /**
+     * @param $profile_id
+     * @return SkyBlockProfile|null
+     */
+    public function getSkyBlockProfile($profile_id) {
+        return $this->wrapProvider(
+            $this->getHypixelPHP()->getProvider()->getSkyBlockProfile(),
+            $this->_getCache(CacheTypes::SKYBLOCK_PROFILES . DIRECTORY_SEPARATOR . CacheUtil::getCacheFileName($profile_id))
+        );
+    }
+
+    /**
+     * @param SkyBlockProfile $profile
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    public function setSkyBlockProfile(SkyBlockProfile $profile) {
+        $this->_setCache(CacheTypes::SKYBLOCK_PROFILES . DIRECTORY_SEPARATOR . CacheUtil::getCacheFileName($profile->getProfileId()), $profile);
+    }
+
+    /**
+     * @param $resource
+     * @return Resource|null
+     */
+    public function getResource($resource) {
+        return $this->wrapProvider(
+            function ($HypixelPHP, $data) use ($resource) {
+                return new Resource($HypixelPHP, $data, $resource);
+            },
+            $this->_getCache(CacheTypes::RESOURCES . DIRECTORY_SEPARATOR . $resource)
+        );
+    }
+
+    /**
+     * @param Resource $resource
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    public function setResource($resource) {
+        $this->_setCache(CacheTypes::RESOURCES . DIRECTORY_SEPARATOR . $resource->getResource(), $resource);
     }
 
 }

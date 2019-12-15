@@ -5,8 +5,6 @@ namespace Plancke\HypixelPHP\cache;
 use Closure;
 use Plancke\HypixelPHP\classes\HypixelObject;
 use Plancke\HypixelPHP\classes\Module;
-use Plancke\HypixelPHP\exceptions\ExceptionCodes;
-use Plancke\HypixelPHP\exceptions\HypixelPHPException;
 use Plancke\HypixelPHP\exceptions\InvalidArgumentException;
 use Plancke\HypixelPHP\responses\booster\Boosters;
 use Plancke\HypixelPHP\responses\friend\Friends;
@@ -16,7 +14,9 @@ use Plancke\HypixelPHP\responses\KeyInfo;
 use Plancke\HypixelPHP\responses\Leaderboards;
 use Plancke\HypixelPHP\responses\player\Player;
 use Plancke\HypixelPHP\responses\PlayerCount;
+use Plancke\HypixelPHP\responses\Resource;
 use Plancke\HypixelPHP\responses\Session;
+use Plancke\HypixelPHP\responses\skyblock\SkyBlockProfile;
 use Plancke\HypixelPHP\responses\WatchdogStats;
 
 /**
@@ -27,15 +27,15 @@ abstract class CacheHandler extends Module {
 
     // cache time to only get cache or null if not present
     const MAX_CACHE_TIME = PHP_INT_MAX;
-    // cache time to only fetch if we don't have cached data
-    const MAX_CACHE_TIME_GET_NON_EXIST = CacheHandler::MAX_CACHE_TIME - 1;
 
     protected $cacheTimes = [
+        CacheTimes::RESOURCES => 3 * 60 * 60,
+
         CacheTimes::PLAYER => 10 * 60,
         CacheTimes::UUID => 6 * 60 * 60,
         CacheTimes::UUID_NOT_FOUND => 2 * 60 * 60,
 
-        CacheTimes::GUILD => 15 * 60,
+        CacheTimes::GUILD => 10 * 60,
         CacheTimes::GUILD_NOT_FOUND => 10 * 60,
 
         CacheTimes::LEADERBOARDS => 10 * 60,
@@ -45,7 +45,9 @@ abstract class CacheHandler extends Module {
         CacheTimes::KEY_INFO => 10 * 60,
         CacheTimes::FRIENDS => 10 * 60,
         CacheTimes::WATCHDOG => 10 * 60,
-        CacheTimes::GAME_COUNTS => 10 * 60
+        CacheTimes::GAME_COUNTS => 10 * 60,
+
+        CacheTimes::SKYBLOCK_PROFILE => 10 * 60
     ];
     protected $globalTime = 0;
 
@@ -93,60 +95,16 @@ abstract class CacheHandler extends Module {
     }
 
     /**
-     * Convert given input to an array in order to cache it
-     *
-     * @param $obj
-     * @return array
-     * @throws InvalidArgumentException
+     * @param $resource
+     * @return Resource
      */
-    protected function objToArray($obj) {
-        if ($obj instanceof HypixelObject) {
-            return $obj->getRaw();
-        } else if (is_array($obj)) {
-            return $obj;
-        }
-        throw new InvalidArgumentException();
-    }
+    public abstract function getResource($resource);
 
     /**
-     * @param Closure $provider
-     * @param $data
-     * @return mixed|null
+     * @param Resource $resource
+     * @return void
      */
-    protected function wrapProvider(Closure $provider, $data) {
-        if ($data == null) return null;
-        return $provider($this->getHypixelPHP(), $data);
-    }
-
-    /**
-     * @param HypixelObject $hypixelObject
-     * @throws HypixelPHPException
-     */
-    public function setCache($hypixelObject) {
-        if ($hypixelObject instanceof Player) {
-            $this->setPlayer($hypixelObject);
-        } elseif ($hypixelObject instanceof Guild) {
-            $this->setGuild($hypixelObject);
-        } elseif ($hypixelObject instanceof Friends) {
-            $this->setFriends($hypixelObject);
-        } elseif ($hypixelObject instanceof Session) {
-            $this->setSession($hypixelObject);
-        } elseif ($hypixelObject instanceof KeyInfo) {
-            $this->setKeyInfo($hypixelObject);
-        } elseif ($hypixelObject instanceof Leaderboards) {
-            $this->setLeaderboards($hypixelObject);
-        } elseif ($hypixelObject instanceof Boosters) {
-            $this->setBoosters($hypixelObject);
-        } elseif ($hypixelObject instanceof WatchdogStats) {
-            $this->setWatchdogStats($hypixelObject);
-        } elseif ($hypixelObject instanceof PlayerCount) {
-            $this->setPlayerCount($hypixelObject);
-        } elseif ($hypixelObject instanceof GameCounts) {
-            $this->setGameCounts($hypixelObject);
-        } else {
-            throw new HypixelPHPException("Invalid HypixelObject", ExceptionCodes::INVALID_HYPIXEL_OBJECT);
-        }
-    }
+    public abstract function setResource($resource);
 
     /**
      * @param $uuid
@@ -301,4 +259,42 @@ abstract class CacheHandler extends Module {
      * @return void
      */
     public abstract function setGameCounts(GameCounts $gameCounts);
+
+    /**
+     * @param $profile_id
+     * @return SkyBlockProfile|null
+     */
+    public abstract function getSkyBlockProfile($profile_id);
+
+    /**
+     * @param SkyBlockProfile $profile
+     * @return void
+     */
+    public abstract function setSkyBlockProfile(SkyBlockProfile $profile);
+
+    /**
+     * Convert given input to an array in order to cache it
+     *
+     * @param $obj
+     * @return array
+     * @throws InvalidArgumentException
+     */
+    protected function objToArray($obj) {
+        if ($obj instanceof HypixelObject) {
+            return $obj->getRaw();
+        } else if (is_array($obj)) {
+            return $obj;
+        }
+        throw new InvalidArgumentException();
+    }
+
+    /**
+     * @param Closure $provider
+     * @param $data
+     * @return mixed|null
+     */
+    protected function wrapProvider(Closure $provider, $data) {
+        if ($data == null) return null;
+        return $provider($this->getHypixelPHP(), $data);
+    }
 }
